@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 320" fill="currentColor">
+  <!-- Left vertical bar of 'n' -->
+  <rect x="80" y="70" width="35" height="180"/>
+
+  <!-- Book cutout in the 'n' -->
+  <g fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Left page of book -->
+    <path d="M 90 130 L 90 200 Q 90 210 100 210"/>
+    <!-- Center spine -->
+    <path d="M 100 130 L 100 210"/>
+    <!-- Right page of book -->
+    <path d="M 110 130 L 110 200 Q 110 210 100 210"/>
+  </g>
+
+  <!-- Right part of 'n' (curves up) -->
+  <path d="M 115 130 Q 115 100 145 100 Q 175 100 175 130 L 175 180 Q 175 210 205 210 Q 235 210 235 180 L 235 70 L 270 70 L 270 180 Q 270 235 205 235 Q 140 235 140 180 L 140 130 Q 140 115 145 115 Q 150 115 150 130"/>
+
+  <!-- Right 'U' shape - left vertical bar -->
+  <rect x="255" y="70" width="35" height="180"/>
+
+  <!-- Right 'U' shape - bottom curve and right vertical -->
+  <path d="M 255 250 L 255 210 Q 255 235 275 235 Q 295 235 295 210 L 295 70 L 330 70 L 330 210 Q 330 250 295 250 Z"/>
+</svg>
