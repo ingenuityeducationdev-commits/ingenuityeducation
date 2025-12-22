@@ -120,9 +120,14 @@ export default function Footer() {
 
         <div className="border-t border-gray-800 pt-4 md:pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-2 md:gap-4">
-            <p className="text-[10px] md:text-sm text-gray-400">
-              © {new Date().getFullYear()} {siteContent.footer.copyright}
-            </p>
+            <div className="text-center md:text-left">
+              <p className="text-[10px] md:text-sm text-gray-400">
+                © {new Date().getFullYear()} {siteContent.footer.copyright}
+              </p>
+              <p className="text-[8px] md:text-xs text-gray-400 mt-1">
+                Created by Shreyas Nethula
+              </p>
+            </div>
             <div className="flex gap-3 md:gap-6 text-[10px] md:text-sm">
               <a href="#" className="hover:text-white transition-colors">
                 {siteContent.footer.links.privacy}
