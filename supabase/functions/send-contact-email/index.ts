@@ -14,6 +14,14 @@ interface ContactFormData {
   message: string;
 }
 
+function base64UrlEncode(str: string): string {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(str);
+  let base64 = btoa(String.fromCharCode(...data));
+  base64 = base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  return base64;
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, {
@@ -25,8 +33,14 @@ Deno.serve(async (req: Request) => {
   try {
     const formData: ContactFormData = await req.json();
 
-    const emailBody = `
-New Contact Form Submission
+    const PICA_SECRET_KEY = Deno.env.get('PICA_SECRET_KEY');
+    const PICA_GMAIL_CONNECTION_KEY = Deno.env.get('PICA_GMAIL_CONNECTION_KEY');
+
+    if (!PICA_SECRET_KEY || !PICA_GMAIL_CONNECTION_KEY) {
+      throw new Error('PICA_SECRET_KEY or PICA_GMAIL_CONNECTION_KEY is not configured');
+    }
+
+    const emailBody = `New Contact Form Submission
 
 From: ${formData.name}
 Email: ${formData.email}
@@ -37,84 +51,30 @@ Message:
 ${formData.message}
 
 ---
-This email was sent from the Ingenuity Education contact form.
-    `;
+This email was sent from the Ingenuity Education contact form.`;
 
-    const emailHtml = `
-<!DOCTYPE html>
-<html>
-<head>
-  <style>
-    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-    .header { background: linear-gradient(135deg, #412751 0%, #79409c 100%); color: white; padding: 20px; border-radius: 8px 8px 0 0; }
-    .content { background: #f9f9f9; padding: 20px; border: 1px solid #ddd; border-top: none; border-radius: 0 0 8px 8px; }
-    .field { margin-bottom: 15px; }
-    .label { font-weight: bold; color: #412751; }
-    .value { margin-top: 5px; padding: 10px; background: white; border-radius: 4px; border: 1px solid #e0e0e0; }
-    .footer { margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 12px; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h2 style="margin: 0;">New Contact Form Submission</h2>
-    </div>
-    <div class="content">
-      <div class="field">
-        <div class="label">Name:</div>
-        <div class="value">${formData.name}</div>
-      </div>
-      <div class="field">
-        <div class="label">Email:</div>
-        <div class="value"><a href="mailto:${formData.email}">${formData.email}</a></div>
-      </div>
-      <div class="field">
-        <div class="label">Phone:</div>
-        <div class="value">${formData.phone || 'Not provided'}</div>
-      </div>
-      <div class="field">
-        <div class="label">Subject:</div>
-        <div class="value">${formData.subject}</div>
-      </div>
-      <div class="field">
-        <div class="label">Message:</div>
-        <div class="value">${formData.message.replace(/\n/g, '<br>')}</div>
-      </div>
-      <div class="footer">
-        This email was sent from the Ingenuity Education contact form.
-      </div>
-    </div>
-  </div>
-</body>
-</html>
-    `;
+    const mimeMessage = `To: ingenuityeducation.dev@gmail.com
+Subject: Contact Form: ${formData.subject}
+Content-Type: text/plain; charset=UTF-8
 
-    const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
-    
-    if (!RESEND_API_KEY) {
-      throw new Error('RESEND_API_KEY is not configured');
-    }
+${emailBody}`;
 
-    const res = await fetch('https://api.resend.com/emails', {
+    const raw = base64UrlEncode(mimeMessage);
+
+    const res = await fetch('https://api.picaos.com/v1/passthrough/users/me/messages/send', {
       method: 'POST',
       headers: {
+        'x-pica-secret': PICA_SECRET_KEY,
+        'x-pica-connection-key': PICA_GMAIL_CONNECTION_KEY,
+        'x-pica-action-id': 'conn_mod_def::F_JeJ_A_TKg::cc2kvVQQTiiIiLEDauy6zQ',
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${RESEND_API_KEY}`,
       },
-      body: JSON.stringify({
-        from: 'Ingenuity Education <onboarding@resend.dev>',
-        to: ['ingenuityeducation.dev@gmail.com'],
-        reply_to: formData.email,
-        subject: `Contact Form: ${formData.subject}`,
-        text: emailBody,
-        html: emailHtml,
-      }),
+      body: JSON.stringify({ raw }),
     });
 
     if (!res.ok) {
       const error = await res.text();
-      console.error('Resend API error:', error);
+      console.error('Gmail API error:', error);
       throw new Error(`Failed to send email: ${error}`);
     }
 
@@ -133,8 +93,8 @@ This email was sent from the Ingenuity Education contact form.
   } catch (error) {
     console.error('Error in send-contact-email function:', error);
     return new Response(
-      JSON.stringify({ 
-        success: false, 
+      JSON.stringify({
+        success: false,
         error: error instanceof Error ? error.message : 'Unknown error occurred'
       }),
       {
